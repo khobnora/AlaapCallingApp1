@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "362025783178",
-    "project_id": "alap-635eb",
-    "storage_bucket": "alap-635eb.firebasestorage.app"
+    "project_number": "695976596559",
+    "project_id": "gen-lang-client-0441731398",
+    "storage_bucket": "gen-lang-client-0441731398.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:362025783178:android:317d4d8fcc086419a90273",
+        "mobilesdk_app_id": "1:695976596559:android:2902674a18aa9d2a19063a",
         "android_client_info": {
-          "package_name": "com.alaap.callingapp"
+          "package_name": "com.aistudio.alaap.mrxqkp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "695976596559-re5a2o4fsaasg01se5u7v94oehkkobf1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.alaap.mrxqkp",
+            "certificate_hash": "57780d688c9ff07a4165f688575bfe67e4dd9c92"
+          }
+        },
+        {
+          "client_id": "695976596559-js3k5fu7sgdkdkv7m8bipn77e0egag6p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyA8OitW449772EG0ARJqgWHn5VWQyuV5lw"
+          "current_key": "AIzaSyAQrH_2v5gvSye4fi4edS5KgNUqp_tJr6c"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "695976596559-js3k5fu7sgdkdkv7m8bipn77e0egag6p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
