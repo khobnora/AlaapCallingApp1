@@ -189,6 +189,7 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
               scope = scope,
               onAuthCancelled = {
                 isLoading = false
+                errorMessage = "Google সাইন-ইন বাতিল হয়েছে বা এই APK-এর সাইনিং কী (SHA-1) Firebase-এ ম্যাচ করেনি। AI Studio থেকে সরাসরি APK বানিয়ে চেষ্টা করুন।"
               },
             )
           },
