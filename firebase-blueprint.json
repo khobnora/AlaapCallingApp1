@@ -1,0 +1,165 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user account profile and notification preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "shortId": { "type": "string", "description": "Unique calling ID such as 1001" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "email": { "type": "string", "description": "Google account email" },
+        "phone": { "type": "string", "description": "Optional phone number" },
+        "photoUrl": { "type": "string", "description": "Profile avatar URL or base64 data URI" },
+        "notificationsEnabled": { "type": "boolean" },
+        "callRingtoneEnabled": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "shortId", "displayName", "notificationsEnabled", "callRingtoneEnabled", "createdAt", "updatedAt"]
+    },
+    "ShortIdLookup": {
+      "title": "ShortIdLookup",
+      "description": "Public non-PII lookup record allowing signed-in users to find peers by Short ID.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "shortId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "online": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "shortId", "displayName", "online", "createdAt", "updatedAt"]
+    },
+    "UserContact": {
+      "title": "UserContact",
+      "description": "A user's saved peer contact for quick calling and group creation.",
+      "type": "object",
+      "properties": {
+        "contactUid": { "type": "string" },
+        "shortId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["contactUid", "shortId", "displayName", "createdAt", "updatedAt"]
+    },
+    "ChatRoom": {
+      "title": "ChatRoom",
+      "description": "1-to-1 or group chat conversation with typing state and active call badge.",
+      "type": "object",
+      "properties": {
+        "groupChat": { "type": "boolean" },
+        "title": { "type": "string" },
+        "memberUids": { "type": "array" },
+        "memberNames": { "type": "object" },
+        "memberShortIds": { "type": "object" },
+        "lastMessageText": { "type": "string" },
+        "lastMessageSenderId": { "type": "string" },
+        "lastMessageSenderName": { "type": "string" },
+        "lastMessageType": { "type": "string", "enum": ["text", "image", "file", "call", "system"] },
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "typingUids": { "type": "array" },
+        "activeCallId": { "type": "string" },
+        "activeCallVideo": { "type": "boolean" },
+        "activeCallHostId": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["groupChat", "title", "memberUids", "memberNames", "memberShortIds", "lastMessageText", "lastMessageType", "lastMessageAt", "typingUids", "activeCallVideo", "createdBy", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual message in a chat room with delivery/read receipts and optional media.",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "memberUids": { "type": "array" },
+        "text": { "type": "string" },
+        "messageType": { "type": "string", "enum": ["text", "image", "file"] },
+        "mediaBase64": { "type": "string" },
+        "fileName": { "type": "string" },
+        "deliveredTo": { "type": "array" },
+        "seenBy": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chatId", "senderId", "senderName", "memberUids", "text", "messageType", "deliveredTo", "seenBy", "createdAt", "updatedAt"]
+    },
+    "CallSession": {
+      "title": "CallSession",
+      "description": "Active or historical 1-to-1 and group voice/video call session with WebRTC signaling.",
+      "type": "object",
+      "properties": {
+        "callerId": { "type": "string" },
+        "callerName": { "type": "string" },
+        "callerShortId": { "type": "string" },
+        "chatId": { "type": "string" },
+        "groupTitle": { "type": "string" },
+        "participantUids": { "type": "array" },
+        "joinedUids": { "type": "array" },
+        "participantNames": { "type": "object" },
+        "participantShortIds": { "type": "object" },
+        "videoCall": { "type": "boolean" },
+        "groupCall": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["ringing", "active", "ended", "missed", "rejected"] },
+        "offerSdp": { "type": "string" },
+        "answerSdp": { "type": "string" },
+        "durationSeconds": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["callerId", "callerName", "callerShortId", "participantUids", "joinedUids", "participantNames", "participantShortIds", "videoCall", "groupCall", "status", "durationSeconds", "createdAt", "updatedAt"]
+    },
+    "IceCandidateRecord": {
+      "title": "IceCandidateRecord",
+      "description": "WebRTC ICE candidate exchanged between call participants.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "participantUids": { "type": "array" },
+        "sdpMid": { "type": "string" },
+        "sdpMLineIndex": { "type": "integer" },
+        "candidate": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "participantUids", "sdpMid", "sdpMLineIndex", "candidate", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Owner-only user profile and settings."
+    },
+    "/short_id_lookup/{shortId}": {
+      "schema": { "$ref": "#/entities/ShortIdLookup" },
+      "description": "Direct get lookup by Short ID with no PII."
+    },
+    "/users/{userId}/contacts/{contactId}": {
+      "schema": { "$ref": "#/entities/UserContact" },
+      "description": "User-scoped saved contacts subcollection."
+    },
+    "/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/ChatRoom" },
+      "description": "1-to-1 and group chats scoped to memberUids."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Chat messages with denormalized memberUids."
+    },
+    "/calls/{callId}": {
+      "schema": { "$ref": "#/entities/CallSession" },
+      "description": "Call sessions and call history scoped to participantUids."
+    },
+    "/calls/{callId}/candidates/{candidateId}": {
+      "schema": { "$ref": "#/entities/IceCandidateRecord" },
+      "description": "WebRTC ICE candidates scoped to participantUids."
+    }
+  }
+}

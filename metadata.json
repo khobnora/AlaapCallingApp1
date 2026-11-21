@@ -1,0 +1,8 @@
+{
+  "name": "Alaap Calling & Chat",
+  "description": "Bengali real-time messaging, voice, video, and group calling Android app with call history and notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

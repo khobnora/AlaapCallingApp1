@@ -1,0 +1,320 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidShortId(id) {
+      return id is string && id.size() >= 3 && id.size() <= 20 && id.matches('^[a-z0-9_]+$');
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isValidBoundedStringList(arr, maxSize) {
+      return arr is list && arr.size() <= maxSize && (arr.size() == 0 || arr[0] is string);
+    }
+
+    // --- Validation Helpers ---
+
+    function isValidUserProfile(data) {
+      return data.uid is string && data.uid == request.auth.uid &&
+             isValidShortId(data.shortId) &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 300000)) &&
+             data.notificationsEnabled is bool &&
+             data.callRingtoneEnabled is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidShortIdLookup(data, shortIdParam) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.shortId is string && data.shortId == shortIdParam &&
+             isValidShortId(data.shortId) &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60 &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 300000)) &&
+             data.online is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidUserContact(data) {
+      return data.contactUid is string && isValidId(data.contactUid) &&
+             isValidShortId(data.shortId) &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60 &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 300000)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidChatRoom(data) {
+      return data.groupChat is bool &&
+             data.title is string && data.title.size() <= 80 &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 20 &&
+             (data.memberUids[0] is string) &&
+             data.memberNames is map && data.memberNames.size() <= 20 &&
+             data.memberShortIds is map && data.memberShortIds.size() <= 20 &&
+             data.lastMessageText is string && data.lastMessageText.size() <= 500 &&
+             (!('lastMessageSenderId' in data) || (data.lastMessageSenderId is string && data.lastMessageSenderId.size() <= 128)) &&
+             (!('lastMessageSenderName' in data) || (data.lastMessageSenderName is string && data.lastMessageSenderName.size() <= 60)) &&
+             data.lastMessageType in ['text', 'image', 'file', 'call', 'system'] &&
+             isValidTimestamp(data.lastMessageAt) &&
+             isValidBoundedStringList(data.typingUids, 20) &&
+             (!('activeCallId' in data) || (data.activeCallId is string && data.activeCallId.size() <= 128)) &&
+             data.activeCallVideo is bool &&
+             (!('activeCallHostId' in data) || (data.activeCallHostId is string && data.activeCallHostId.size() <= 128)) &&
+             data.createdBy is string && isValidId(data.createdBy) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidChatMessage(data, chatIdParam) {
+      return data.chatId is string && data.chatId == chatIdParam &&
+             data.senderId is string && isValidId(data.senderId) &&
+             data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 60 &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 20 &&
+             (data.memberUids[0] is string) &&
+             data.text is string && data.text.size() <= 2000 &&
+             data.messageType in ['text', 'image', 'file'] &&
+             (!('mediaBase64' in data) || (data.mediaBase64 is string && data.mediaBase64.size() <= 600000)) &&
+             (!('fileName' in data) || (data.fileName is string && data.fileName.size() <= 150)) &&
+             isValidBoundedStringList(data.deliveredTo, 20) &&
+             isValidBoundedStringList(data.seenBy, 20) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidCallSession(data) {
+      return data.callerId is string && isValidId(data.callerId) &&
+             data.callerName is string && data.callerName.size() >= 1 && data.callerName.size() <= 60 &&
+             isValidShortId(data.callerShortId) &&
+             (!('chatId' in data) || (data.chatId is string && data.chatId.size() <= 128)) &&
+             (!('groupTitle' in data) || (data.groupTitle is string && data.groupTitle.size() <= 80)) &&
+             data.participantUids is list && data.participantUids.size() >= 1 && data.participantUids.size() <= 20 &&
+             (data.participantUids[0] is string) &&
+             isValidBoundedStringList(data.joinedUids, 20) &&
+             data.participantNames is map && data.participantNames.size() <= 20 &&
+             data.participantShortIds is map && data.participantShortIds.size() <= 20 &&
+             data.videoCall is bool &&
+             data.groupCall is bool &&
+             data.status in ['ringing', 'active', 'ended', 'missed', 'rejected'] &&
+             (!('offerSdp' in data) || (data.offerSdp is string && data.offerSdp.size() <= 50000)) &&
+             (!('answerSdp' in data) || (data.answerSdp is string && data.answerSdp.size() <= 50000)) &&
+             data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 86400 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidIceCandidate(data) {
+      return data.senderId is string && data.senderId == request.auth.uid &&
+             data.participantUids is list && data.participantUids.size() >= 1 && data.participantUids.size() <= 20 &&
+             (data.participantUids[0] is string) &&
+             data.sdpMid is string && data.sdpMid.size() <= 64 &&
+             data.sdpMLineIndex is int && data.sdpMLineIndex >= 0 && data.sdpMLineIndex <= 20 &&
+             data.candidate is string && data.candidate.size() >= 1 && data.candidate.size() <= 2000 &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    // --- Collection Rules ---
+
+    // 1. Private User Profile (Owner-only PII protection)
+    match /users/{userId} {
+      allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll(['uid', 'shortId', 'displayName', 'notificationsEnabled', 'callRingtoneEnabled', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['uid', 'shortId', 'displayName', 'email', 'phone', 'photoUrl', 'notificationsEnabled', 'callRingtoneEnabled', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().uid == existing().uid &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['shortId', 'displayName', 'email', 'phone', 'photoUrl', 'notificationsEnabled', 'callRingtoneEnabled', 'updatedAt']);
+
+      allow delete: if false;
+
+      // User's saved contacts subcollection
+      match /contacts/{contactId} {
+        allow get: if isSignedIn() && isValidId(contactId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(contactId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll(['contactUid', 'shortId', 'displayName', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['contactUid', 'shortId', 'displayName', 'photoUrl', 'createdAt', 'updatedAt']) &&
+                         isValidUserContact(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(contactId) &&
+                         request.auth.uid == userId &&
+                         incoming().contactUid == existing().contactUid &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidUserContact(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['shortId', 'displayName', 'photoUrl', 'updatedAt']);
+
+        allow delete: if isSignedIn() && isValidId(contactId) && request.auth.uid == userId;
+      }
+    }
+
+    // 2. Public Short ID Lookup (No PII, direct get by ID only, no listing)
+    match /short_id_lookup/{shortId} {
+      allow get: if isSignedIn() && isValidShortId(shortId);
+      allow list: if false;
+
+      allow create: if isSignedIn() &&
+                       isValidShortId(shortId) &&
+                       incoming().keys().hasAll(['userId', 'shortId', 'displayName', 'online', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'shortId', 'displayName', 'photoUrl', 'online', 'createdAt', 'updatedAt']) &&
+                       isValidShortIdLookup(incoming(), shortId);
+
+      allow update: if isSignedIn() &&
+                       isValidShortId(shortId) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().shortId == existing().shortId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidShortIdLookup(incoming(), shortId) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoUrl', 'online', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidShortId(shortId) && existing().userId == request.auth.uid;
+    }
+
+    // 3. 1-to-1 and Group Chats
+    match /chats/{chatId} {
+      allow get: if isSignedIn() && isValidId(chatId) && (
+        (resource == null && chatId.matches('^direct_.*' + request.auth.uid + '.*')) ||
+        (resource != null && request.auth.uid in existing().memberUids)
+      );
+      allow list: if isSignedIn() && request.auth.uid in existing().memberUids;
+
+      allow create: if isSignedIn() &&
+                       isValidId(chatId) &&
+                       incoming().createdBy == request.auth.uid &&
+                       request.auth.uid in incoming().memberUids &&
+                       incoming().keys().hasAll(['groupChat', 'title', 'memberUids', 'memberNames', 'memberShortIds', 'lastMessageText', 'lastMessageType', 'lastMessageAt', 'typingUids', 'activeCallVideo', 'createdBy', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['groupChat', 'title', 'memberUids', 'memberNames', 'memberShortIds', 'lastMessageText', 'lastMessageSenderId', 'lastMessageSenderName', 'lastMessageType', 'lastMessageAt', 'typingUids', 'activeCallId', 'activeCallVideo', 'activeCallHostId', 'createdBy', 'createdAt', 'updatedAt']) &&
+                       isValidChatRoom(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(chatId) &&
+                       request.auth.uid in existing().memberUids &&
+                       incoming().createdBy == existing().createdBy &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidChatRoom(incoming()) && (
+                         // Action 1: Send message / update last message
+                         incoming().diff(existing()).affectedKeys().hasOnly(['lastMessageText', 'lastMessageSenderId', 'lastMessageSenderName', 'lastMessageType', 'lastMessageAt', 'typingUids', 'updatedAt']) ||
+                         // Action 2: Typing indicator update
+                         incoming().diff(existing()).affectedKeys().hasOnly(['typingUids', 'updatedAt']) ||
+                         // Action 3: Start / end group call badge
+                         incoming().diff(existing()).affectedKeys().hasOnly(['activeCallId', 'activeCallVideo', 'activeCallHostId', 'lastMessageText', 'lastMessageType', 'lastMessageAt', 'updatedAt']) ||
+                         // Action 4: Add members to group chat
+                         (existing().groupChat == true && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'memberUids', 'memberNames', 'memberShortIds', 'updatedAt']))
+                       );
+
+      allow delete: if false;
+
+      // Chat messages with denormalized memberUids
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && isValidId(chatId) && isValidId(messageId) && request.auth.uid in existing().memberUids;
+        allow list: if isSignedIn() && isValidId(chatId) && request.auth.uid in existing().memberUids;
+
+        allow create: if isSignedIn() &&
+                         isValidId(chatId) &&
+                         isValidId(messageId) &&
+                         incoming().senderId == request.auth.uid &&
+                         request.auth.uid in incoming().memberUids &&
+                         incoming().keys().hasAll(['chatId', 'senderId', 'senderName', 'memberUids', 'text', 'messageType', 'deliveredTo', 'seenBy', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['chatId', 'senderId', 'senderName', 'memberUids', 'text', 'messageType', 'mediaBase64', 'fileName', 'deliveredTo', 'seenBy', 'createdAt', 'updatedAt']) &&
+                         isValidChatMessage(incoming(), chatId);
+
+        allow update: if isSignedIn() &&
+                         isValidId(chatId) &&
+                         isValidId(messageId) &&
+                         request.auth.uid in existing().memberUids &&
+                         incoming().chatId == existing().chatId &&
+                         incoming().senderId == existing().senderId &&
+                         incoming().memberUids == existing().memberUids &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidChatMessage(incoming(), chatId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['deliveredTo', 'seenBy', 'updatedAt']);
+
+        allow delete: if false;
+      }
+    }
+
+    // 4. Live Call Sessions & Call History
+    match /calls/{callId} {
+      allow get: if isSignedIn() && isValidId(callId) && request.auth.uid in existing().participantUids;
+      allow list: if isSignedIn() && request.auth.uid in existing().participantUids;
+
+      allow create: if isSignedIn() &&
+                       isValidId(callId) &&
+                       incoming().callerId == request.auth.uid &&
+                       request.auth.uid in incoming().participantUids &&
+                       incoming().keys().hasAll(['callerId', 'callerName', 'callerShortId', 'participantUids', 'joinedUids', 'participantNames', 'participantShortIds', 'videoCall', 'groupCall', 'status', 'durationSeconds', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['callerId', 'callerName', 'callerShortId', 'chatId', 'groupTitle', 'participantUids', 'joinedUids', 'participantNames', 'participantShortIds', 'videoCall', 'groupCall', 'status', 'offerSdp', 'answerSdp', 'durationSeconds', 'createdAt', 'updatedAt']) &&
+                       isValidCallSession(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(callId) &&
+                       request.auth.uid in existing().participantUids &&
+                       incoming().callerId == existing().callerId &&
+                       incoming().createdAt == existing().createdAt &&
+                       !(existing().status in ['ended', 'missed', 'rejected']) &&
+                       isValidCallSession(incoming()) && (
+                         // Action 1: Caller sets offer SDP
+                         (request.auth.uid == existing().callerId && incoming().diff(existing()).affectedKeys().hasOnly(['offerSdp', 'updatedAt'])) ||
+                         // Action 2: Callee joins / sets answer SDP / activates call
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'joinedUids', 'answerSdp', 'updatedAt']) ||
+                         // Action 3: End, reject, or miss call with duration
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'joinedUids', 'durationSeconds', 'updatedAt'])
+                       );
+
+      allow delete: if false;
+
+      match /candidates/{candidateId} {
+        allow get: if isSignedIn() && isValidId(callId) && isValidId(candidateId) && request.auth.uid in existing().participantUids;
+        allow list: if isSignedIn() && isValidId(callId) && request.auth.uid in existing().participantUids;
+
+        allow create: if isSignedIn() &&
+                         isValidId(callId) &&
+                         isValidId(candidateId) &&
+                         request.auth.uid in incoming().participantUids &&
+                         incoming().keys().hasAll(['senderId', 'participantUids', 'sdpMid', 'sdpMLineIndex', 'candidate', 'createdAt']) &&
+                         incoming().keys().hasOnly(['senderId', 'participantUids', 'sdpMid', 'sdpMLineIndex', 'candidate', 'createdAt']) &&
+                         isValidIceCandidate(incoming());
+
+        allow update, delete: if false;
+      }
+    }
+  }
+}
