@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "362025783178",
+    "project_id": "alap-635eb",
+    "storage_bucket": "alap-635eb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:362025783178:android:317d4d8fcc086419a90273",
+        "android_client_info": {
+          "package_name": "com.alaap.callingapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8OitW449772EG0ARJqgWHn5VWQyuV5lw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
